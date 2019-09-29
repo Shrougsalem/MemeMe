@@ -16,6 +16,7 @@ struct Meme {
 }
 class MemeViewController: UIViewController, UIImagePickerControllerDelegate,
 UINavigationControllerDelegate, UITextFieldDelegate {
+    
     //MARK: Outlets
     @IBOutlet weak var imagePickerView: UIImageView!
     @IBOutlet weak var cameraButton: UIBarButtonItem!
@@ -88,7 +89,6 @@ UINavigationControllerDelegate, UITextFieldDelegate {
     func save() {
         // Create the meme
         let meme = Meme(topText: topTextField.text!, bottomText: bottomTextField.text!, originalImage: imagePickerView.image!, memedImage: generateMemedImage())
-        
     }
     
     func generateMemedImage() -> UIImage {
@@ -111,12 +111,19 @@ UINavigationControllerDelegate, UITextFieldDelegate {
 
    
     //MARK: Image Picker Delegates
+    func pickAnImage(_ source: UIImagePickerController.SourceType) {
+        let pickerController = UIImagePickerController()
+        pickerController.delegate = self
+        pickerController.sourceType = source
+        present(pickerController, animated: true, completion: nil)
+    }
+    
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true, completion: nil)
         if let image = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
             imagePickerView.image = image
-            topTextField.topAnchor.constraint(equalTo: imagePickerView.topAnchor)
-            bottomTextField.bottomAnchor.constraint(equalTo: imagePickerView.bottomAnchor)
+            topTextField.topAnchor.constraint(equalTo:imagePickerView.topAnchor, constant: +30).isActive = true
+            bottomTextField.bottomAnchor.constraint(equalTo: imagePickerView.bottomAnchor, constant: -30).isActive = true
         }
         
         shareButton.isEnabled = true
@@ -128,8 +135,9 @@ UINavigationControllerDelegate, UITextFieldDelegate {
     
     //MARK: Keyboard adjusments
     @objc func keyboardWillShow(_ notification:Notification) {
-        
-        view.frame.origin.y -= getKeyboardHeight(notification)
+        if bottomTextField.isFirstResponder {
+            view.frame.origin.y -= getKeyboardHeight(notification)
+        }
     }
     
     @objc func keyboardWillHide(_ notification:Notification) {
@@ -151,35 +159,24 @@ UINavigationControllerDelegate, UITextFieldDelegate {
     }
     
     func unsubscribeFromKeyboardNotifications() {
-        
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     //MARK: Actions
     @IBAction func pickAnImageFromAlbum(_ sender: Any) {
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        imagePicker.sourceType = .photoLibrary
-        present(imagePicker, animated: true, completion: nil)
-
+       self.pickAnImage(.photoLibrary)
     }
     
     @IBAction func pickAnImageFromCamera(_ sender: Any) {
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        imagePicker.sourceType = .camera
-        present(imagePicker, animated: true, completion: nil)
+       self.pickAnImage(.camera)
     }
-    
+   
     @IBAction func cancelImage(_ sender: Any) {
         imagePickerView.image = nil
         topTextField.text = "TOP"
         bottomTextField.text = "BOTTOM"
         shareButton.isEnabled = false
-    }
-    @IBAction func cancelMemedImage(_ sender: Any) {
-       
     }
     
     @IBAction func shareMemedImage(_ sender: Any) {
